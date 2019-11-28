@@ -72,7 +72,7 @@ class NetworkBuilder(nn.Module):
                     elif topology_layers[i-1][0]=="CONV":
                         input_dim  = output_dim
                     elif topology_layers[i-1][0]=="CONVP":
-                        int(output_dim/2) #/2 accounts for pooling operation of the previous convolutional layer
+                        input_dim = int(output_dim/2) #/2 accounts for pooling operation of the previous convolutional layer
                     output_dim   = int((input_dim - int(layer[2]) + 2*int(layer[4]))/int(layer[3]))+1
                     self.layers.append(CNNP_block(
                                        in_channels=in_channels,
@@ -94,7 +94,7 @@ class NetworkBuilder(nn.Module):
                     elif topology_layers[i-1][0]=="CONV":
                         input_dim = output_dim
                     elif topology_layers[i-1][0]=="CONVP":
-                        int(output_dim/2) #/2 accounts for pooling operation of the previous convolutional layer                    
+                        input_dim = int(output_dim/2) #/2 accounts for pooling operation of the previous convolutional layer                    
                     output_dim   = int((input_dim - int(layer[2]) + 2*int(layer[4]))/int(layer[3]))+1
                     self.layers.append(CNN_block(
                                        in_channels=in_channels,
@@ -113,7 +113,7 @@ class NetworkBuilder(nn.Module):
                         input_dim = pow(input_size,2)*input_channels 
                         self.conv_to_fc = 0
                     elif topology_layers[i-1][0]=="CONV":
-                        input_dim = input_dim
+                        input_dim = pow(int(output_dim),2)*int(topology_layers[i-1][1])
                         self.conv_to_fc = i
                     elif topology_layers[i-1][0]=="CONVP":
                         input_dim = pow(int(output_dim/2),2)*int(topology_layers[i-1][1]) #/2 accounts for pooling operation of the previous convolutional layer
