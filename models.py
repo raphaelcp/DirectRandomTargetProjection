@@ -64,7 +64,24 @@ class NetworkBuilder(nn.Module):
         for i in range(num_layers):
             layer = topology_layers[i]
             try:
-                if layer[0] == "CONV":
+                if layer[0] == "CONVP":# 'Has a pooling layer at the end'
+                    in_channels  = input_channels if (i==0) else out_channels
+                    out_channels = int(layer[1])
+                    input_dim    = input_size if (i==0) else int(output_dim/2) #/2 accounts for pooling operation of the previous convolutional layer
+                    output_dim   = int((input_dim - int(layer[2]) + 2*int(layer[4]))/int(layer[3]))+1
+                    self.layers.append(CNNP_block(
+                                       in_channels=in_channels,
+                                       out_channels=int(layer[1]),
+                                       kernel_size=int(layer[2]),
+                                       stride=int(layer[3]),
+                                       padding=int(layer[4]),
+                                       bias=True,
+                                       activation=conv_act,
+                                       dim_hook=[label_features,out_channels,output_dim,output_dim],
+                                       label_features=label_features,
+                                       train_mode=train_mode
+                                       ))
+                elif layer[0] == "CONV":
                     in_channels  = input_channels if (i==0) else out_channels
                     out_channels = int(layer[1])
                     input_dim    = input_size if (i==0) else int(output_dim/2) #/2 accounts for pooling operation of the previous convolutional layer
@@ -144,9 +161,9 @@ class FC_block(nn.Module):
         return x
 
 
-class CNN_block(nn.Module):
+class CNNP_block(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding, bias, activation, dim_hook, label_features, train_mode):
-        super(CNN_block, self).__init__()
+        super(CNNP_block, self).__init__()
         
         self.conv = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding, bias=bias)
         if train_mode == 'FA':
@@ -162,6 +179,24 @@ class CNN_block(nn.Module):
         x = self.pool(x)
         return x
 
+class CNN_block(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, bias, activation, dim_hook, label_features, train_mode):
+        super(CNN_block, self).__init__()
+        
+        self.conv = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding, bias=bias)
+        if train_mode == 'FA':
+            self.conv = FA_wrapper(module=self.conv, layer_type='conv', dim=self.conv.weight.shape, stride=stride, padding=padding)
+        self.act = Activation(activation)
+        #self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.hook = TrainingHook(label_features=label_features, dim_hook=dim_hook, train_mode=train_mode)
+
+    def forward(self, x, labels, y):
+        x = self.conv(x)
+        x = self.act(x)
+        x = self.hook(x, labels, y)
+        #x = self.pool(x)
+        return x
+
 
 class Activation(nn.Module):
     def __init__(self, activation):
@@ -173,6 +208,8 @@ class Activation(nn.Module):
             self.act = nn.Sigmoid()
         elif activation == "relu":
             self.act = nn.ReLU()
+        elif activation == "softmax":
+            self.act = nn.Softmax()
         elif activation == "none":
             self.act = None
         else:
