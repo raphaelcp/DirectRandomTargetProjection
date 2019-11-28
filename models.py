@@ -105,6 +105,9 @@ class NetworkBuilder(nn.Module):
                     elif topology_layers[i-1][0]=="CONV":
                         input_dim = pow(int(output_dim/2),2)*int(topology_layers[i-1][1]) #/2 accounts for pooling operation of the previous convolutional layer
                         self.conv_to_fc = i
+                    elif topology_layers[i-1][0]=="CONVP":
+                        input_dim = pow(int(output_dim/2),2)*int(topology_layers[i-1][1]) #/2 accounts for pooling operation of the previous convolutional layer
+                        self.conv_to_fc = i
                     else:
                         input_dim = output_dim
                     output_dim = int(layer[1])
