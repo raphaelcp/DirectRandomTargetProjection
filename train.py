@@ -37,13 +37,24 @@ import torch.optim as optim
 import torch.utils.data
 import models
 from tqdm import tqdm
+import numpy as np
 
 def train(args, device, train_loader, traintest_loader, test_loader):
     torch.manual_seed(42)
     
     for trial in range(1,args.trials+1):
         # Network topology
-        model = models.NetworkBuilder(args.topology, input_size=args.input_size, input_channels=args.input_channels, label_features=args.label_features, train_batch_size=args.batch_size, train_mode=args.train_mode, dropout=args.dropout, conv_act=args.conv_act, hidden_act=args.hidden_act, output_act=args.output_act, fc_zero_init=args.fc_zero_init,  device=device)
+        model = models.NetworkBuilder(args.topology, input_size=args.input_size,
+         input_channels=args.input_channels,
+         label_features=args.label_features,
+         train_batch_size=args.batch_size,
+         train_mode=args.train_mode,
+         dropout=args.dropout,
+         conv_act=args.conv_act,
+         hidden_act=args.hidden_act,
+         output_act=args.output_act,
+         fc_zero_init=args.fc_zero_init,  
+         device=device)
 
         if args.cuda:
             model.cuda()
@@ -77,6 +88,8 @@ def train(args, device, train_loader, traintest_loader, test_loader):
             raise NameError("=== ERROR: loss " + str(args.loss) + " not supported")
         
         print("\n\n=== Starting model training with %d epochs:\n" % (args.epochs,))        
+        score_class = []
+        
         for epoch in range(1, args.epochs + 1):
             # Training
             train_epoch(args, model, device, train_loader, optimizer, loss)
@@ -85,6 +98,8 @@ def train(args, device, train_loader, traintest_loader, test_loader):
             print("\nSummary of epoch %d:" % (epoch))
             test_epoch(args, model, device, traintest_loader, loss, 'Train')
             test_epoch(args, model, device, test_loader, loss, 'Test')
+
+
 
 
 def train_epoch(args, model, device, train_loader, optimizer, loss):
@@ -128,8 +143,22 @@ def test_epoch(args, model, device, test_loader, loss, phase):
                 correct += pred.eq(label.view_as(pred)).sum().item()
     
     loss = test_loss / len_dataset
+
     if not args.regression:
         acc = 100. * correct / len_dataset
         print("\t[%5sing set] Loss: %6f, Accuracy: %6.2f%%" % (phase, loss, acc))
     else:
         print("\t[%5sing set] Loss: %6f" % (phase, loss))
+
+    path = 'output/'
+    if phase == 'Test':
+        f = open('%s/acc.txt'%(path), 'a')
+        f.write(str(acc)+'\n')
+        f.close()
+        l = open('%s/loss.txt'%(path), 'a')
+        l.write(str(loss)+'\n')
+        l.close()
+
+    # np.savetxt('%s/loss.txt'%(path), loss_class, fmt='%.7f')
+    # np.savetxt('%s/acc.txt'%(path), score_class, fmt='%.7f')   
+
