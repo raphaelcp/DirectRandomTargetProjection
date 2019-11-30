@@ -152,10 +152,10 @@ def test_epoch(args, model, device, test_loader, loss, phase):
 
     path = 'output/'
     if phase == 'Test':
-        f = open('%s/acc.txt'%(path), 'a')
+        f = open('%s/acc-alexnetBP.txt'%(path), 'a')
         f.write(str(acc)+'\n')
         f.close()
-        l = open('%s/loss.txt'%(path), 'a')
+        l = open('%s/loss-alexnetBP.txt'%(path), 'a')
         l.write(str(loss)+'\n')
         l.close()
 
